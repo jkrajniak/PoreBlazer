@@ -3,6 +3,8 @@
 # Executable name 
 CMD = poreblazer.exe
 
+SRC = src
+
 # -------- description of DFLAGS --------------- 
 # DNAGCOMPILER - some nag ocmpiler specific parts especially for using
 # system calls
@@ -62,7 +64,7 @@ endif
 ifeq ($(FC),gfortran)
 F90FLAGS = 
 DEBUG_FLAGS = 
-OFLAGS = -O2 -unshared
+OFLAGS = -O2 #-unshared
 LINKERFLAGS = 
 endif
 
@@ -118,29 +120,32 @@ endif
 #
 # Implicit rules for handling src files
 #  ( uses static pattern rules, see info for make )
-%.o : %.f90 
-	$(FC) $(GEN_FLAGS) $(DEBUG_FLAGS) $(F90FLAGS) $(OFLAGS) $(DFLAGS) -c $<
-%.o : %.f
-	$(FC) $(GEN_FLAGS) $(DEBUG_FLAGS) $(F77FLAGS) $(OFLAGS) -c $<
+$(SRC)/%.o : $(SRC)/%.f90
+	$(FC) $(GEN_FLAGS) $(DEBUG_FLAGS) $(F90FLAGS) $(OFLAGS) $(DFLAGS) -J $(SRC) -o $(SRC)/$*.o -c $<
+$(SRC)/%.o : $(SRC)/%.f
+	$(FC) $(GEN_FLAGS) $(DEBUG_FLAGS) $(F77FLAGS) $(OFLAGS) -J $(SRC) -o $(SRC)/$*.o -c $<
 
-OBJECTS = defaults.o percolation.o utils.o matrixops.o random.o vector.o \
-fundcell.o matrix.o poreblazer.o 
+OBJECTS = $(SRC)/defaults.o $(SRC)/percolation.o $(SRC)/utils.o $(SRC)/matrixops.o $(SRC)/random.o $(SRC)/vector.o \
+$(SRC)/matrix.o $(SRC)/fundcell.o $(SRC)/poreblazer.o
 
 $(CMD) : $(OBJECTS)
-	$(FC) $(DEBUG_FLAGS) $(OFLAGS) $(LINKERFLAGS) $(OBJECTS)  -o $(CMD)
+	$(FC) $(DEBUG_FLAGS) $(OFLAGS) $(LINKERFLAGS) $(OBJECTS) -J $(SRC) -o $(CMD)
 
 dec : $(OBJECTS)
 	$(FC) $(DEBUG_FLAGS) $(OFLAGS) $(OBJECTS) -o $(CMD)
 
 clean:
-	/bin/rm -f *.o *.i *.mod a.out make.log
+	/bin/rm -f $(SRC)/*.o $(SRC)/*.i $(SRC)/*.mod $(SRC)/a.out $(SRC)/make.log
 
 cleano:
-	rm -f *.o *.i 
+	rm -f $(SRC)/*.o $(SRC)/*.i
 
 
 depend : 
-	makemake *.f90 *.F 
+	makemake *.f90 *.F
+
+test:
+	@./tests/regression/run_tests.sh $(CURDIR)/$(CMD)
 
 defaults.o                :
 percolation.o             :
